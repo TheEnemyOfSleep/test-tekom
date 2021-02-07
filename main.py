@@ -6,6 +6,10 @@ import sys
 import argparse
 import json
 import logging
+from handlers import TlsSMTPHandler
+from logging.handlers import SMTPHandler
+import os
+from dotenv import load_dotenv
 
 from requests import exceptions
 
@@ -21,11 +25,28 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 console_handler.setFormatter(logging.Formatter(log_console_format))
 
+load_dotenv()
+GMAIL_LOGIN = os.getenv('GMAIL_LOGIN')
+SECRET_PASSWORD = os.getenv('SECRET_PASSWORD')
+
+log_mail_format = '[%(asctime)s] - %(url)s - %(message)s'
+gmail_handler = TlsSMTPHandler(mailhost=('smtp.gmail.com', 587),
+                fromaddr="script@example.com",
+                toaddrs="zedavis2011@gmail.com",
+                subject="Ошибка в скрипте, ресурс недоступен!",
+                credentials=(GMAIL_LOGIN, SECRET_PASSWORD),
+                secure=())
+gmail_handler.setLevel(logging.ERROR)
+gmail_handler.setFormatter(logging.Formatter(log_mail_format))
+
+
 logging.basicConfig(filename='script.log', level=logging.INFO, format='[%(asctime)s] - %(url)s - %(message)s')
 logger = logging.getLogger()
 
 logging.getLogger('urllib3').setLevel('CRITICAL')
 logger.addHandler(console_handler)
+
+logger.addHandler(gmail_handler)
 
 
 class Alarm:
@@ -53,7 +74,10 @@ class Alarm:
         url = dict(url=site)
         try:
             r = requests.get(site)
-            logger.info('available', extra=url)
+            if r.status_code >= 200 and r.status_code < 300:
+                logger.info('available', extra=url)
+            else:
+                logger.error('not available', extra=url)
         except requests.exceptions.ConnectionError:
             logger.error('not available', extra=url)
         except requests.exceptions.HTTPError as err:
