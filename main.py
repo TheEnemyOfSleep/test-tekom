@@ -88,7 +88,7 @@ class Alarm:
             self.main()
             self.set_time = self.current_time + timedelta(seconds=self.interval)
 
-    def check_request(self, site):
+    def check_request(self, site) -> Any:
         url = dict(url=site)
         try:
             r = requests.get(site)
@@ -96,9 +96,7 @@ class Alarm:
                 logger.info('available', extra=url)
             else:
                 logger.error('not available', extra=url)
-        except requests.exceptions.ConnectionError:
-            logger.error('not available', extra=url)
-        except requests.exceptions.HTTPError as err:
+        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError):
             logger.error('not available', extra=url)
 
     def main(self):
