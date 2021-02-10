@@ -133,5 +133,7 @@ dmypy.json
 .vscode/
 
 # Python files
+telegram_bot
+non_blocked_script.py
 test.py
 alarm.py
