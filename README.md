@@ -24,9 +24,9 @@ TELEGRAM_CHANNEL_ID=-1234567891234
 ```
 - use terminal and tags if you need define resourses:
 
-where -f, --file - json file of resourses similar with argumet -d --data
+where -f/--file - json file of resourses similar with argumet -d/--data
 
--i --interval interval of repeating default value is 18000 sec = 5 hours
+-i/--interval interval of repeating default value is 18000 sec = 5 hours
 ```bash
 python main.py -f fixture.json -i 10
 or
