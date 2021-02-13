@@ -135,5 +135,10 @@ dmypy.json
 # Python files
 telegram_bot
 non_blocked_script.py
+async_handlers.py
+aiohttp_script.py
+async_script.py
+default_script.py
 test.py
+tests.py
 alarm.py

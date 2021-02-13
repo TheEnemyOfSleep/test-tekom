@@ -21,7 +21,7 @@ TELEGRAM_CHANNEL_ID = os.getenv('TELEGRAM_CHANNEL_ID')
 # Custom handlers
 class TlsSMTPHandler(logging.handlers.SMTPHandler):
 
-    def emit(self, record):
+    def emit(self, record) -> bool:
         """
         Emit a record.
  

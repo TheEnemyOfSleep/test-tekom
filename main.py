@@ -52,7 +52,7 @@ gmail_handler.setFormatter(logging.Formatter(log_mail_format))
 log_telegram_format ='Ошибка в скрипте, ресурс недоступен!\n[%(asctime)s] - %(url)s - %(message)s'
 telegram_handler = TelegramHandler()
 telegram_handler.setLevel(logging.ERROR)
-telegram_handler.setFormatter(logging.Formatter(log_mail_format))
+telegram_handler.setFormatter(logging.Formatter(log_telegram_format))
 
 
 logging.basicConfig(filename='script.log', level=logging.INFO, format='[%(asctime)s] - %(url)s - %(message)s')
@@ -100,10 +100,7 @@ class Alarm:
             logger.error('not available', extra=url)
 
     def main(self):
-
-        if isinstance(self.resourse, str):
-            self.check_request(self.resourse)
-        elif isinstance(self.resourse, list):
+        if isinstance(self.resourse, list):
             for site in self.resourse:
                 self.check_request(site)
 
