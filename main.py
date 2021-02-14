@@ -22,6 +22,7 @@ MAIL_HOST = (os.getenv('MAIL_HOST'), int(os.getenv('MAIL_PORT')))
 EMAIL_LOGIN = os.getenv('EMAIL_LOGIN')
 SECRET_PASSWORD = os.getenv('SECRET_PASSWORD')
 EMAIL_FROM_ADDRES = os.getenv('EMAIL_FROM_ADDRES')
+EMAIL_SUBJECT = os.getenv('EMAIL_SUBJECT') or 'Ошибка в скрипте, ресурс недоступен!'
 if os.getenv('EMAIL_TO_ADDRES'):
     EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES').split(' ')
 else:
@@ -64,6 +65,12 @@ data_group.add_argument('-d', '--data', nargs='+', help=r'list data with resours
 
 args = parser.parse_args()
 
+# Simple functions
+def check_dict_key(arg_dict, key: str):
+    try:
+        return arg_dict[key]
+    except (KeyError, TypeError):
+        return None
 
 # Logging
 logging.basicConfig(filename='script.log',
@@ -85,10 +92,23 @@ logger.addHandler(console_handler)
 log_mail_format = '[%(asctime)s] - %(url)s - %(message)s'
 if  all([MAIL_HOST, EMAIL_LOGIN, SECRET_PASSWORD, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES]) or \
     (args.smtp and all(key in args.smtp for key in ['mailhost', 'fromaddr', 'toaddrs',
-                                                    'subject', 'credentials'])):
-    email_handler = TlsSMTPHandler(mailhost=MAIL_HOST,
-                    fromaddr=EMAIL_FROM_ADDRES,
-                    toaddrs=EMAIL_TO_ADDRES,
+                                                    'subject', 'email_login', 'email_password'])):
+
+    # If you have set env variable and json data script first check what json and afterwards check dotenvfile
+    if args.smtp:
+        mailhost = check_dict_key(args.smtp, 'mailhost') or MAIL_HOST
+        fromaddr = check_dict_key(args.smtp, 'fromaddr') or EMAIL_FROM_ADDRES
+        toaddrs = check_dict_key(args.smtp, 'toaddrs') or EMAIL_TO_ADDRES
+        subject = check_dict_key(args.smtp, 'subject') or EMAIL_SUBJECT
+        email_login = check_dict_key(args.smtp, 'email_login') or EMAIL_LOGIN
+        email_password = check_dict_key(args.smtp, 'email_password') or SECRET_PASSWORD
+    else:
+        mailhost, fromaddr, toaddrs, email_login, email_password = \
+        MAIL_HOST, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES, EMAIL_LOGIN, SECRET_PASSWORD
+
+    email_handler = TlsSMTPHandler(mailhost=mailhost,
+                    fromaddr=fromaddr,
+                    toaddrs=toaddrs,
                     subject="Ошибка в скрипте, ресурс недоступен!",
                     credentials=(EMAIL_LOGIN, SECRET_PASSWORD),
                     secure=())
@@ -108,8 +128,16 @@ elif args.smtp:
 if all([TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID]) or \
     (args.telegram and all(key in args.telegram for key in ['token', 'channel_id'])):
 
-    log_telegram_format ='Ошибка в скрипте, ресурс недоступен!\n[%(asctime)s] - %(url)s - %(message)s'
-    telegram_handler = TelegramHandler(TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID)
+    # If you have set env variable and json data script first check what json and afterwards check dotenvfile
+    if args.telegram:
+        telegram_token = check_dict_key(args.telegram, 'token') or TELEGRAM_TOKEN
+        telegram_channel_id = check_dict_key(args.telegram, 'channel_id') or TELEGRAM_CHANNEL_ID
+    else:
+        telegram_token, telegram_channel_id = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
+
+    # Set parameters for telegram handler
+    log_telegram_format = 'Ошибка в скрипте, ресурс недоступен!\n' + '[%(asctime)s] - %(url)s - %(message)s'
+    telegram_handler = TelegramHandler(telegram_token, telegram_channel_id)
     telegram_handler.setLevel(logging.ERROR)
     telegram_handler.setFormatter(logging.Formatter(log_telegram_format))
 
