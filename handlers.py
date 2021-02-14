@@ -9,14 +9,10 @@ from dotenv import load_dotenv
 """
 Used decision from that url
 
-http://mynthon.net/howto/-/python/python%20-%20logging.SMTPHandler-how-to-use-gmail-smtp-server.txt
+http://mynthon.net/howto/-/python/python%20-%20logging.SMTPHandler-how-to-use-email-smtp-server.txt
 """
 
 load_dotenv()
-
-# Define constants
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-TELEGRAM_CHANNEL_ID = os.getenv('TELEGRAM_CHANNEL_ID')
 
 # Custom handlers
 class TlsSMTPHandler(logging.handlers.SMTPHandler):
@@ -60,17 +56,10 @@ class TelegramHandler(logging.Handler):
     A handler class which allows send messages to
     telegram bot
     """
-    def __init__(self, token: str = None, telegram_channel: int = None) -> None:
+    def __init__(self, token: str = None, channel_id: int = None) -> None:
         super().__init__()
-        if token:
-            self.token = token
-        else:
-            self.token = TELEGRAM_CHANNEL_ID
-
-        if telegram_channel:
-            self.telegram_channel = telegram_channel
-        else:
-            self.telegram_channel = TELEGRAM_CHANNEL_ID
+        self.token = token
+        self.channel_id = channel_id
     
     def check_constant(self, var_name: str, value: Any, const: Any) -> None:
         if value:
@@ -81,7 +70,7 @@ class TelegramHandler(logging.Handler):
     def emit(self, record) -> None:
         try:
             msg = self.format(record)
-            bot = telebot.TeleBot(TELEGRAM_TOKEN)
-            bot.send_message(self.telegram_channel, msg, disable_web_page_preview=True)
+            bot = telebot.TeleBot(self.token)
+            bot.send_message(self.channel_id, msg, disable_web_page_preview=True)
         except:
             self.handleError(record)
