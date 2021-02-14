@@ -18,11 +18,14 @@ from handlers import (
 # Get environment variable
 load_dotenv()
 # Email variables
-MAIL_HOST = (os.getenv('MAIL_HOST'), os.getenv('MAIL_PORT'))
+MAIL_HOST = (os.getenv('MAIL_HOST'), int(os.getenv('MAIL_PORT')))
 EMAIL_LOGIN = os.getenv('EMAIL_LOGIN')
 SECRET_PASSWORD = os.getenv('SECRET_PASSWORD')
 EMAIL_FROM_ADDRES = os.getenv('EMAIL_FROM_ADDRES')
-EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES').split(' ')
+if os.getenv('EMAIL_TO_ADDRES'):
+    EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES').split(' ')
+else:
+    EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES')
 
 # Telegram variables
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -80,10 +83,12 @@ logger.addHandler(console_handler)
 
 # Email handler
 log_mail_format = '[%(asctime)s] - %(url)s - %(message)s'
-if all([MAIL_HOST, EMAIL_LOGIN, SECRET_PASSWORD, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES]):
+if  all([MAIL_HOST, EMAIL_LOGIN, SECRET_PASSWORD, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES]) or \
+    (args.smtp and all(key in args.smtp for key in ['mailhost', 'fromaddr', 'toaddrs',
+                                                    'subject', 'credentials'])):
     email_handler = TlsSMTPHandler(mailhost=MAIL_HOST,
                     fromaddr=EMAIL_FROM_ADDRES,
-                    toaddrs="zedavis2011@email.com",
+                    toaddrs=EMAIL_TO_ADDRES,
                     subject="Ошибка в скрипте, ресурс недоступен!",
                     credentials=(EMAIL_LOGIN, SECRET_PASSWORD),
                     secure=())
@@ -100,11 +105,11 @@ elif args.smtp:
                                 EMAIL_FROM_ADDRES and EMAIL_TO_ADDRES variables
                                 """)
 # Telegram handler
-if all(key in args.telegram for key in ['token', 'channel_id']) or \
-    all([TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID]):
+if all([TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID]) or \
+    (args.telegram and all(key in args.telegram for key in ['token', 'channel_id'])):
 
     log_telegram_format ='Ошибка в скрипте, ресурс недоступен!\n[%(asctime)s] - %(url)s - %(message)s'
-    telegram_handler = TelegramHandler()
+    telegram_handler = TelegramHandler(TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID)
     telegram_handler.setLevel(logging.ERROR)
     telegram_handler.setFormatter(logging.Formatter(log_telegram_format))
 
