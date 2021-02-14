@@ -1,6 +1,8 @@
 # test-tekom
 
-Non optimised simple class-based script which allow send error message to email using smtp handler and telegram handler.
+If you read this, then is not script anymore. This is bad optimized application.
+
+Non optimised simple class-based app which allow send error message to email using smtp handler and telegram handler.
 
 # Instalation
 
