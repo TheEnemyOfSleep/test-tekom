@@ -76,3 +76,57 @@ Add all requirements arguments for working with extension (telegram, smtp):
         + required:
             + token
             + channel_id
+
+or use cfg.json file for full configurating script:
+```json
+{
+    "version": 1,
+    "formatters": {
+        "standard": {
+            "format": "[%(asctime)s] - %(url)s - %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "standard"            
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "script.log",
+            "formatter": "standard"
+        },
+        "telegram": {
+            "level": "DEBUG",
+            "formatter": "standard",
+            "class": "handlers.TelegramHandler",
+            "token": "your telegram bot token",
+            "channel_id": "telegram chat id"
+        },
+        "smtp": {
+            "level": "ERROR",
+            "formatter": "standard",
+            "class": "handlers.TlsSMTPHandler",
+            "mailhost": ["smtp.yandex.com", 465],
+            "fromaddr": "bot@email",
+            "toaddrs": "your@email",
+            "credentials": ["smtp username", "smtp password"],
+            "subject": "Some subject"
+        }
+    },
+    "loggers": {
+        "root": {
+            "handlers": [
+                "telegram",
+                "smtp"
+            ],
+            "level": "DEBUG"
+        }
+    },
+    "root": {
+        "level": "DEBUG",
+        "handlers": ["console", "file"]
+    }
+}
+```
