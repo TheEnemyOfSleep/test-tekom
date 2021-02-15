@@ -27,6 +27,7 @@ if os.getenv('EMAIL_TO_ADDRES'):
     EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES').split(' ')
 else:
     EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES')
+smtp_list = [MAIL_HOST, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES, EMAIL_LOGIN, SECRET_PASSWORD]
 
 # Telegram variables
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -65,12 +66,14 @@ data_group.add_argument('-d', '--data', nargs='+', help=r'list data with resours
 
 args = parser.parse_args()
 
+
 # Simple functions
 def check_dict_key(arg_dict, key: str):
     try:
         return arg_dict[key]
     except (KeyError, TypeError):
         return None
+
 
 # Logging
 logging.basicConfig(filename='script.log',
@@ -88,23 +91,23 @@ console_handler.setFormatter(logging.Formatter(log_console_format))
 
 logger.addHandler(console_handler)
 
-# Email handler
-log_mail_format = '[%(asctime)s] - %(url)s - %(message)s'
-if  all([MAIL_HOST, EMAIL_LOGIN, SECRET_PASSWORD, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES]) or \
-    (args.smtp and all(key in args.smtp for key in ['mailhost', 'fromaddr', 'toaddrs',
-                                                    'subject', 'email_login', 'email_password'])):
 
-    # If you have set env variable and json data script first check what json and afterwards check dotenvfile
-    if args.smtp:
-        mailhost = check_dict_key(args.smtp, 'mailhost') or MAIL_HOST
-        fromaddr = check_dict_key(args.smtp, 'fromaddr') or EMAIL_FROM_ADDRES
-        toaddrs = check_dict_key(args.smtp, 'toaddrs') or EMAIL_TO_ADDRES
-        subject = check_dict_key(args.smtp, 'subject') or EMAIL_SUBJECT
-        email_login = check_dict_key(args.smtp, 'email_login') or EMAIL_LOGIN
-        email_password = check_dict_key(args.smtp, 'email_password') or SECRET_PASSWORD
-    else:
-        mailhost, fromaddr, toaddrs, email_login, email_password = \
-        MAIL_HOST, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES, EMAIL_LOGIN, SECRET_PASSWORD
+# Email handler
+# If you have set env variable and json data script first check what json and afterwards check dotenvfile
+if args.smtp:
+    mailhost = check_dict_key(args.smtp, 'mailhost') or MAIL_HOST
+    fromaddr = check_dict_key(args.smtp, 'fromaddr') or EMAIL_FROM_ADDRES
+    toaddrs = check_dict_key(args.smtp, 'toaddrs') or EMAIL_TO_ADDRES
+    subject = check_dict_key(args.smtp, 'subject') or EMAIL_SUBJECT
+    email_login = check_dict_key(args.smtp, 'email_login') or EMAIL_LOGIN
+    email_password = check_dict_key(args.smtp, 'email_password') or SECRET_PASSWORD
+else:
+    mailhost, fromaddr, toaddrs, email_login, email_password = smtp_list
+
+log_mail_format = '[%(asctime)s] - %(url)s - %(message)s'
+
+
+if  all([mailhost, fromaddr, toaddrs, email_login, email_password]):
 
     email_handler = TlsSMTPHandler(mailhost=mailhost,
                     fromaddr=fromaddr,
@@ -116,7 +119,7 @@ if  all([MAIL_HOST, EMAIL_LOGIN, SECRET_PASSWORD, EMAIL_FROM_ADDRES, EMAIL_TO_AD
     email_handler.setFormatter(logging.Formatter(log_mail_format))
 
     logger.addHandler(email_handler)
-elif args.smtp:
+elif args.smtp or any(smtp_list):
     raise argparse.ArgumentError(smtp_arg,"""
                                 ArgumentError: argument would has keys: 
                                 (mailhost, fromaddr, toaddrs, subject, credentials)
@@ -124,16 +127,18 @@ elif args.smtp:
                                 MAIL_HOST, EMAIL_LOGIN, SECRET_PASSWORD,
                                 EMAIL_FROM_ADDRES and EMAIL_TO_ADDRES variables
                                 """)
-# Telegram handler
-if all([TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID]) or \
-    (args.telegram and all(key in args.telegram for key in ['token', 'channel_id'])):
 
-    # If you have set env variable and json data script first check what json and afterwards check dotenvfile
-    if args.telegram:
-        telegram_token = check_dict_key(args.telegram, 'token') or TELEGRAM_TOKEN
-        telegram_channel_id = check_dict_key(args.telegram, 'channel_id') or TELEGRAM_CHANNEL_ID
-    else:
-        telegram_token, telegram_channel_id = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
+
+# Telegram handler
+# If you have set env variable and json data script first check what json and afterwards check dotenvfile
+if args.telegram:
+    telegram_token = check_dict_key(args.telegram, 'token') or TELEGRAM_TOKEN
+    telegram_channel_id = check_dict_key(args.telegram, 'channel_id') or TELEGRAM_CHANNEL_ID
+else:
+    telegram_token, telegram_channel_id = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
+
+
+if all([telegram_token, telegram_channel_id]):
 
     # Set parameters for telegram handler
     log_telegram_format = 'Ошибка в скрипте, ресурс недоступен!\n' + '[%(asctime)s] - %(url)s - %(message)s'
@@ -142,10 +147,10 @@ if all([TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID]) or \
     telegram_handler.setFormatter(logging.Formatter(log_telegram_format))
 
     logger.addHandler(telegram_handler)
-elif args.telegram:
+elif args.telegram or any([telegram_token, telegram_channel_id]):
     raise argparse.ArgumentError(telegram,
-                                'ArgumentError: argument would has keys: token and channel_id \
-                                or use .env file with TELEGRAM_TOKEN and TELEGRAM_CHANNEL_ID variables')
+                                """ArgumentError: argument would has keys: token and channel_id 
+                                or use .env file with TELEGRAM_TOKEN and TELEGRAM_CHANNEL_ID variables""")
 
 
 class Alarm:
