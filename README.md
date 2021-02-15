@@ -16,11 +16,13 @@ install requirements.txt:
 Before are start script you need set some important things:
 - set smtp and telegram variables like:
 ```env
+# EMAIL variables
 EMAIL_LOGIN="myemail@example.com"
 SECRET_PASSWORD="foobar1234"
 EMAIL_FROM_ADDRES="script@example.com"
 EMAIL_TO_ADDRES="firstemail@example.com secondemail@example.com thirdemail@example.com"
 
+# Telegram
 TELEGRAM_TOKEN="mytoken"
 TELEGRAM_CHANNEL_ID=-1234567891234
 ```
@@ -30,7 +32,47 @@ where -f/--file - json file of resourses similar with argumet -d/--data
 
 -i/--interval interval of repeating default value is 18000 sec = 5 hours
 ```bash
+# Simple command with set interval and file of resourses
 python main.py -f fixture.json -i 10
-or
+
+# Command with set interval and data with resourses
 python main.py -d https://github.com/ https://www.jenkins.io/ https://gitlab.com/ http://www.google.com/nothere
+
+# Command with default interval file with resourses and set directly argument for telegram on windows
+python main.py -f fixture.json --telegram '{\\\"token\\\": \\\"mytoken\\\",\\\"channel_id\\\": -1234556789123}'
+
+# Command with default interval file with resourses and set directly argument for telegram on linux
+python main.py -f fixture.json --telegram '{"token": "mytoken","channel_id": -1234556789123}'
 ```
+# Extensions
+
+Add all requirements arguments for working with extension (telegram, smtp):
++ SMTP email arguments:
+    * dotenv:
+        + required:
+            + MAIL_HOST
+            + MAIL_PORT
+            + EMAIL_LOGIN
+            + SECRET_PASSWORD
+            + EMAIL_FROM_ADDRES
+            + EMAIL_TO_ADDRES
+        + optional:
+            + EMAIL_SUBJECT (default: 'Ошибка в скрипте, ресурс недоступен!')
+    * json string:
+        + required:
+            + mailhost
+            + email_login
+            + email_password
+            + fromaddr
+            + toaddrs
+        + optional:
+            + subject (default: 'Ошибка в скрипте, ресурс недоступен!')
++ telegram arguments:
+    * dotenv:
+        + required:
+            + TELEGRAM_TOKEN
+            + TELEGRAM_CHANNEL_ID
+    * json string:
+        + required:
+            + token
+            + channel_id
