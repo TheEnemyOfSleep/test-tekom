@@ -132,13 +132,12 @@ dmypy.json
 .vscode
 .vscode/
 
-# Python files
+# Test python files/folders
+examples
 telegram_bot
-non_blocked_script.py
-async_handlers.py
-aiohttp_script.py
-async_script.py
-default_script.py
 test.py
 tests.py
-alarm.py
+
+# Config files
+cfg.json
+n_cfg.json
