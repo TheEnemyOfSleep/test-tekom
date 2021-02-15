@@ -1,4 +1,5 @@
 import sys
+import time
 import requests
 from threading import Timer
 from utils import Arguments, LoggerValidation
@@ -12,22 +13,23 @@ class ScriptTimer(object):
         self.args       = args
         self.kwargs     = kwargs
         self.is_running = False
-    
+
     def _run(self):
         self.is_running = False
         self.start()
         self.function(*self.args, **self.kwargs)
-    
+
     def start(self):
         if not self.is_running:
             self._timer = Timer(self.interval, self._run)
             self._timer.daemon = True
             self._timer.start()
             self.is_running = True
-    
+
     def stop(self):
         self._timer.cancel()
         self.is_running = False
+
 
 def check_request(site):
     url = dict(url=site)
@@ -48,12 +50,15 @@ def main(resourse):
 
 
 if __name__ == "__main__":
+    args = Arguments()
+    logger = LoggerValidation(__name__, args).get_logger()
+    script_timer = ScriptTimer(args.interval, main, args.resourses)
+
+    main(args.resourses)
+    script_timer.start()
     try:
-        args = Arguments()
-        logger = LoggerValidation(__name__, args).get_logger()
-        script_timer = ScriptTimer(args.interval, main, args.resourses)
-        main(args.resourses)
-        script_timer.start()
+        while True:
+            time.sleep(86400)  # Script go to sleep 1 day, but script will work
     except KeyboardInterrupt:
         try:
             script_timer.stop()
