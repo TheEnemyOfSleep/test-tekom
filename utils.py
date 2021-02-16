@@ -9,16 +9,17 @@ from typing import Any, Union
 
 
 # Email variables
-MAIL_HOST = (os.getenv('MAIL_HOST'), int(os.getenv('MAIL_PORT')) if os.getenv('MAIL_PORT') else None)
+EMAIL_HOST_NAME = os.getenv('MAIL_HOST')
+EMAIL_PORT = int(os.getenv('MAIL_PORT')) if os.getenv('MAIL_PORT') else None
 EMAIL_LOGIN = os.getenv('EMAIL_LOGIN')
 SECRET_PASSWORD = os.getenv('SECRET_PASSWORD')
 EMAIL_FROM_ADDRES = os.getenv('EMAIL_FROM_ADDRES')
+USE_TLS = os.getenv('USE_TLS') or False
 EMAIL_SUBJECT = os.getenv('EMAIL_SUBJECT') or 'Ошибка в скрипте, ресурс недоступен!'
 if os.getenv('EMAIL_TO_ADDRES'):
     EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES').split(' ')
 else:
     EMAIL_TO_ADDRES = os.getenv('EMAIL_TO_ADDRES')
-smtp_list = [MAIL_HOST, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES, EMAIL_LOGIN, SECRET_PASSWORD]
 
 # Telegram variables
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -98,27 +99,32 @@ class Arguments():
     def get_smtp_params(self) -> Union[dict, None]:
         smtp_params = {'smtp': {}}
         if self.smtp:
-            smtp_params['smtp']['mailhost'] = check_dict_key(self.smtp, 'mailhost') or MAIL_HOST
-            smtp_params['smtp']['fromaddr'] = check_dict_key(self.smtp, 'fromaddr') or EMAIL_FROM_ADDRES
-            smtp_params['smtp']['toaddrs'] = check_dict_key(self.smtp, 'toaddrs') or EMAIL_TO_ADDRES
+            smtp_params['smtp']['hostname'] = check_dict_key(self.smtp, 'hostname') or EMAIL_HOST_NAME
+            smtp_params['smtp']['port'] = check_dict_key(self.smtp, 'port') or EMAIL_PORT
+            smtp_params['smtp']['sender'] = check_dict_key(self.smtp, 'fromaddr') or EMAIL_FROM_ADDRES
+            smtp_params['smtp']['recipient'] = check_dict_key(self.smtp, 'toaddrs') or EMAIL_TO_ADDRES
             smtp_params['smtp']['subject'] = check_dict_key(self.smtp, 'subject') or EMAIL_SUBJECT
-            smtp_params['smtp']['credentials'] = check_dict_key(self.smtp, 'email_login') or EMAIL_LOGIN,\
-                check_dict_key(self.smtp, 'email_password') or SECRET_PASSWORD
+            smtp_params['smtp']['username'] = check_dict_key(self.smtp, 'email_login') or EMAIL_LOGIN
+            smtp_params['smtp']['password'] = check_dict_key(self.smtp, 'email_password') or SECRET_PASSWORD
+            smtp_params['smtp']['use_tls'] = check_dict_key(self.smtp, 'use_tls') or USE_TLS
+            
         else:
-            smtp_params['smtp']['mailhost'], smtp_params['smtp']['fromaddr'], smtp_params['smtp']['toaddrs'], \
-            smtp_params['smtp']['subject'], smtp_params['smtp']['credentials'] = \
-            MAIL_HOST, EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES, EMAIL_SUBJECT, (EMAIL_LOGIN, SECRET_PASSWORD)
+            smtp_params['smtp']['hostname'], smtp_params['smtp']['port'], smtp_params['smtp']['sender'], \
+            smtp_params['smtp']['recipient'], smtp_params['smtp']['subject'], smtp_params['smtp']['username'], \
+            smtp_params['smtp']['password'],  smtp_params['smtp']['use_tls'] = \
+            EMAIL_HOST_NAME, EMAIL_PORT, EMAIL_FROM_ADDRES, \
+            EMAIL_TO_ADDRES, EMAIL_SUBJECT, EMAIL_LOGIN, \
+            SECRET_PASSWORD, USE_TLS
         
         check_smtp_params = smtp_params['smtp'].copy()
         check_smtp_params.pop('subject')
-        check_smtp_params.pop('mailhost')
 
         if not any(list(check_smtp_params.values())):
             return None
 
         smtp_params['smtp']['level'] = "ERROR"
         smtp_params['smtp']['formatter'] = "standard"
-        smtp_params['smtp']['class'] = "handlers.TlsSMTPHandler"
+        smtp_params['smtp']['class'] = "aiolog.smtp.Handler"
         return smtp_params
 
 
@@ -127,13 +133,13 @@ class Arguments():
 
         if self.telegram:
             telegram_params['telegram']['token'] = check_dict_key(self.telegram, 'token') or TELEGRAM_TOKEN
-            telegram_params['telegram']['channel_id'] = check_dict_key(self.telegram, 'channel_id') or TELEGRAM_CHANNEL_ID
+            telegram_params['telegram']['chat_id'] = check_dict_key(self.telegram, 'channel_id') or TELEGRAM_CHANNEL_ID
         else:
-             telegram_params['telegram']['token'], telegram_params['telegram']['channel_id'] = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
+             telegram_params['telegram']['token'], telegram_params['telegram']['chat_id'] = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
 
         telegram_params['telegram']['level'] = "ERROR"
         telegram_params['telegram']['formatter'] = "standard"
-        telegram_params['telegram']['class'] = "handlers.TelegramHandler"
+        telegram_params['telegram']['class'] = "aiolog.telegram.Handler"
 
         return telegram_params
  
