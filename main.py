@@ -1,22 +1,21 @@
-from asyncio.exceptions import CancelledError
-import sys
-import time
-import requests
 import aiolog
+import aiohttp
 import asyncio
+from asyncio.exceptions import CancelledError
 from utils import Arguments, LoggerValidation
 
 
 async def check_request(site):
     url = dict(url=site)
-    try:
-        r = requests.get(site)
-        if r.status_code >= 200 and r.status_code < 300:
-            logger.info('available', extra=url)
-        else:
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(site) as r:
+                if r.status >= 200 and r.status < 300:
+                    logger.info('available', extra=url)
+                else:
+                    logger.error('not available', extra=url)
+        except (aiohttp.ClientConnectorError, aiohttp.ClientConnectorError):
             logger.error('not available', extra=url)
-    except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError):
-        logger.error('not available', extra=url)
 
 
 async def main(resourse):
@@ -27,12 +26,10 @@ async def main(resourse):
         await asyncio.sleep(args.interval)
 
 
-def stop():
-    task.cancel()
-
 if __name__ == "__main__":
     args = Arguments()
     logger = LoggerValidation(__name__, args).get_logger()
+
     aiolog.start()
     loop = asyncio.get_event_loop()
     task = loop.create_task(main(args.resourses))
