@@ -1,37 +1,13 @@
+from asyncio.exceptions import CancelledError
 import sys
 import time
 import requests
-from threading import Timer
+import aiolog
+import asyncio
 from utils import Arguments, LoggerValidation
 
 
-class ScriptTimer(object):
-    def __init__(self, interval, function, *args, **kwargs) -> None:
-        self._timer     = None
-        self.interval   = interval
-        self.function   = function
-        self.args       = args
-        self.kwargs     = kwargs
-        self.is_running = False
-
-    def _run(self):
-        self.is_running = False
-        self.start()
-        self.function(*self.args, **self.kwargs)
-
-    def start(self):
-        if not self.is_running:
-            self._timer = Timer(self.interval, self._run)
-            self._timer.daemon = True
-            self._timer.start()
-            self.is_running = True
-
-    def stop(self):
-        self._timer.cancel()
-        self.is_running = False
-
-
-def check_request(site):
+async def check_request(site):
     url = dict(url=site)
     try:
         r = requests.get(site)
@@ -43,24 +19,29 @@ def check_request(site):
         logger.error('not available', extra=url)
 
 
-def main(resourse):
-    if isinstance(resourse, list):
-        for site in resourse:
-            check_request(site)
+async def main(resourse):
+    while True:
+        if isinstance(resourse, list):
+            for site in resourse:
+                await check_request(site)
+        await asyncio.sleep(args.interval)
 
+
+def stop():
+    task.cancel()
 
 if __name__ == "__main__":
     args = Arguments()
     logger = LoggerValidation(__name__, args).get_logger()
-    script_timer = ScriptTimer(args.interval, main, args.resourses)
-
-    main(args.resourses)
-    script_timer.start()
+    aiolog.start()
+    loop = asyncio.get_event_loop()
+    task = loop.create_task(main(args.resourses))
     try:
-        while True:
-            time.sleep(86400)  # Script go to sleep 1 day, but script will work
+
+        loop.run_until_complete(task)
+        loop.run_until_complete(aiolog.stop())
     except KeyboardInterrupt:
-        try:
-            script_timer.stop()
-        except AttributeError:
-            sys.exit(0)
+        task.cancel()
+        loop.stop()
+    except CancelledError:
+        pass
