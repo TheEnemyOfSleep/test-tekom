@@ -27,12 +27,10 @@ async def main(resourse):
         await asyncio.sleep(args.interval)
 
 
-def stop():
-    task.cancel()
-
 if __name__ == "__main__":
     args = Arguments()
     logger = LoggerValidation(__name__, args).get_logger()
+
     aiolog.start()
     loop = asyncio.get_event_loop()
     task = loop.create_task(main(args.resourses))
