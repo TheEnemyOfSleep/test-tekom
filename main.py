@@ -1,4 +1,5 @@
 import aiolog
+import datetime
 import aiohttp
 import asyncio
 from asyncio.exceptions import CancelledError
@@ -19,11 +20,15 @@ async def check_request(site):
 
 
 async def main(resourse):
-    while True:
-        if isinstance(resourse, list):
-            for site in resourse:
-                await check_request(site)
-        await asyncio.sleep(args.interval)
+    next_time = datetime.datetime.now() + datetime.timedelta(seconds=args.interval)
+    if isinstance(resourse, list):
+        for site in resourse:
+            await check_request(site)
+    while next_time > datetime.datetime.now():
+        # Tick of timer
+        await asyncio.sleep(1)
+    else:
+        await main(resourse)
 
 
 if __name__ == "__main__":
