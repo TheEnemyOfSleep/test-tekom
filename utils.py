@@ -167,6 +167,7 @@ class LoggerValidation:
 
     def add_handlers(self, data, params: dict, hname: str) -> None:
         # If there no any of arguments then handler won't be created
+        print(params)
         if isinstance(params, dict):
             assert all(list(params[hname].values())) or not any(list(params[hname].values())), \
                     ('You trie use {} extensions, ',
