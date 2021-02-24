@@ -144,8 +144,7 @@ class Arguments:
         else:
              telegram_params['telegram']['token'], telegram_params['telegram']['chat_id'] = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
 
-        print(list(telegram_params.values()))
-        if not any(list(telegram_params.values())):
+        if not any(list(telegram_params['telegram'].values())):
             return None
         else:
             telegram_params['telegram']['level'] = "ERROR"
