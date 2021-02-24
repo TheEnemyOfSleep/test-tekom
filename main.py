@@ -20,15 +20,9 @@ async def check_request(site):
 
 
 async def main(resourse):
-    next_time = datetime.datetime.now() + datetime.timedelta(seconds=args.interval)
     if isinstance(resourse, list):
         for site in resourse:
             await check_request(site)
-    while next_time > datetime.datetime.now():
-        # Tick of timer
-        await asyncio.sleep(1)
-    else:
-        await main(resourse)
 
 
 if __name__ == "__main__":
@@ -37,13 +31,9 @@ if __name__ == "__main__":
 
     aiolog.start()
     loop = asyncio.get_event_loop()
-    task = loop.create_task(main(args.resourses))
     try:
-
+        task = loop.create_task(main(args.resourses))
         loop.run_until_complete(task)
-        loop.run_until_complete(aiolog.stop())
-    except KeyboardInterrupt:
+    except CancelledError:
         task.cancel()
         loop.stop()
-    except CancelledError:
-        pass
