@@ -9,7 +9,10 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
-                python main.py --data ${params.DATA}
+                virtualenv venv --distribute &&
+                . venv/bin/activate &&
+                pip install -r ./async_requirements.txt &&
+                python ./main.py --data ${params.DATA}
                 """
             }
         }
