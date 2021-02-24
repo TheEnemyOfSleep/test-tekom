@@ -9,6 +9,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
+                pip install --user -r async_requirements.txt &&
                 python ./main.py --data ${params.DATA} --smtp ${params.SMTP} --telegram ${params.TELEGRAM}
                 """
             }
