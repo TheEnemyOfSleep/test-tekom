@@ -9,7 +9,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
-                python ./main.py --data ${params.DATA}
+                python main.py --data ${params.DATA}
                 """
             }
         }
