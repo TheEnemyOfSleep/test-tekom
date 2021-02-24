@@ -144,6 +144,7 @@ class Arguments:
         else:
              telegram_params['telegram']['token'], telegram_params['telegram']['chat_id'] = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
 
+        print(list(telegram_params.values()))
         if not any(list(telegram_params.values())):
             return None
         else:
@@ -167,7 +168,6 @@ class LoggerValidation:
 
     def add_handlers(self, data, params: dict, hname: str) -> None:
         # If there no any of arguments then handler won't be created
-        print(params)
         if isinstance(params, dict):
             assert all(list(params[hname].values())) or not any(list(params[hname].values())), \
                     ('You trie use {} extensions, ',
