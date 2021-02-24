@@ -1,4 +1,5 @@
 import aiolog
+import datetime
 import aiohttp
 import asyncio
 from asyncio.exceptions import CancelledError
@@ -19,11 +20,9 @@ async def check_request(site):
 
 
 async def main(resourse):
-    while True:
-        if isinstance(resourse, list):
-            for site in resourse:
-                await check_request(site)
-        await asyncio.sleep(args.interval)
+    if isinstance(resourse, list):
+        for site in resourse:
+            await check_request(site)
 
 
 if __name__ == "__main__":
@@ -32,13 +31,9 @@ if __name__ == "__main__":
 
     aiolog.start()
     loop = asyncio.get_event_loop()
-    task = loop.create_task(main(args.resourses))
     try:
-
+        task = loop.create_task(main(args.resourses))
         loop.run_until_complete(task)
-        loop.run_until_complete(aiolog.stop())
-    except KeyboardInterrupt:
+    except CancelledError:
         task.cancel()
         loop.stop()
-    except CancelledError:
-        pass

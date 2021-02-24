@@ -5,10 +5,12 @@ import json
 import logging
 import argparse
 import logging.config
-from typing import Any, Union
+from typing import Union
+from dotenv import load_dotenv
 
 
 # Email variables
+load_dotenv()
 EMAIL_HOST_NAME = os.getenv('MAIL_HOST')
 EMAIL_PORT = int(os.getenv('MAIL_PORT')) if os.getenv('MAIL_PORT') else None
 EMAIL_LOGIN = os.getenv('EMAIL_LOGIN')
@@ -34,22 +36,22 @@ def check_dict_key(arg_dict, key: str):
 
 
 # more prettify solution from https://stackoverflow.com/questions/39967787/python-argparse-in-separate-function-inside-a-class-and-calling-args-from-init
-class Arguments():
+class Arguments:
     def __init__(self,
-                interval: int = 18000,
+                argv: list=None,
+                interval: int=18000,
                 telegram: Union[str, None]=None,
                 smtp: Union[str, None]=None,
                 file: Union[str, None]=None,
                 data: Union[list, None]=None) -> None:
-        self.interval = interval
-        self.telegram = telegram
-        self.smtp = smtp
-        self.file = file
-        self.data = data
-        self.pars_args()
+        self.interval  = interval
+        self.telegram  = telegram
+        self.smtp      = smtp
+        self.resourses = file or data
+        self.pars_args(argv)
 
 
-    def pars_args(self, argv=None):
+    def pars_args(self, argv: list=None):
         parser = argparse.ArgumentParser(description="Flip a switch by setting a flag")
         self.interval_obj = parser.add_argument('-i', '--interval',
                                         type=int,
@@ -84,7 +86,7 @@ class Arguments():
 
         self.interval = args.interval
         self.telegram = args.telegram
-        self.smtp = args.smtp
+        self.smtp     = args.smtp
 
         if args.file:
             with open(args.file) as json_file:
@@ -98,34 +100,39 @@ class Arguments():
 
     def get_smtp_params(self) -> Union[dict, None]:
         smtp_params = {'smtp': {}}
+
         if self.smtp:
             smtp_params['smtp']['hostname'] = check_dict_key(self.smtp, 'hostname') or EMAIL_HOST_NAME
             smtp_params['smtp']['port'] = check_dict_key(self.smtp, 'port') or EMAIL_PORT
-            smtp_params['smtp']['sender'] = check_dict_key(self.smtp, 'fromaddr') or EMAIL_FROM_ADDRES
-            smtp_params['smtp']['recipient'] = check_dict_key(self.smtp, 'toaddrs') or EMAIL_TO_ADDRES
+            smtp_params['smtp']['sender'] = check_dict_key(self.smtp, 'sender') or EMAIL_FROM_ADDRES
+            smtp_params['smtp']['recipient'] = check_dict_key(self.smtp, 'recipient') or EMAIL_TO_ADDRES
             smtp_params['smtp']['subject'] = check_dict_key(self.smtp, 'subject') or EMAIL_SUBJECT
-            smtp_params['smtp']['username'] = check_dict_key(self.smtp, 'email_login') or EMAIL_LOGIN
-            smtp_params['smtp']['password'] = check_dict_key(self.smtp, 'email_password') or SECRET_PASSWORD
+            smtp_params['smtp']['username'] = check_dict_key(self.smtp, 'username') or EMAIL_LOGIN
+            smtp_params['smtp']['password'] = check_dict_key(self.smtp, 'password') or SECRET_PASSWORD
             smtp_params['smtp']['use_tls'] = check_dict_key(self.smtp, 'use_tls') or USE_TLS
-            
+
         else:
-            smtp_params['smtp']['hostname'], smtp_params['smtp']['port'], smtp_params['smtp']['sender'], \
-            smtp_params['smtp']['recipient'], smtp_params['smtp']['subject'], smtp_params['smtp']['username'], \
-            smtp_params['smtp']['password'],  smtp_params['smtp']['use_tls'] = \
-            EMAIL_HOST_NAME, EMAIL_PORT, EMAIL_FROM_ADDRES, \
-            EMAIL_TO_ADDRES, EMAIL_SUBJECT, EMAIL_LOGIN, \
-            SECRET_PASSWORD, USE_TLS
-        
+            smtp_params['smtp']['hostname'], smtp_params['smtp']['port'], \
+            smtp_params['smtp']['sender'], smtp_params['smtp']['recipient'], \
+            smtp_params['smtp']['username'], smtp_params['smtp']['password'], \
+            smtp_params['smtp']['use_tls'], smtp_params['smtp']['subject'] = \
+            EMAIL_HOST_NAME, EMAIL_PORT, \
+            EMAIL_FROM_ADDRES, EMAIL_TO_ADDRES, \
+            EMAIL_LOGIN, SECRET_PASSWORD, \
+            USE_TLS, EMAIL_SUBJECT \
+
         check_smtp_params = smtp_params['smtp'].copy()
         check_smtp_params.pop('subject')
 
         if not any(list(check_smtp_params.values())):
             return None
+        else:
+            smtp_params['smtp']['level'] = check_dict_key(self.smtp, 'level') or "ERROR"
+            smtp_params['smtp']['formatter'] = check_dict_key(self.smtp, 'formatter') or "standard"
+            # Pls don't touch this
+            smtp_params['smtp']['class'] = check_dict_key(self.smtp, 'class') or "aiolog.smtp.Handler"
 
-        smtp_params['smtp']['level'] = "ERROR"
-        smtp_params['smtp']['formatter'] = "standard"
-        smtp_params['smtp']['class'] = "aiolog.smtp.Handler"
-        return smtp_params
+            return smtp_params
 
 
     def get_telegram_params(self) -> dict:
@@ -133,15 +140,18 @@ class Arguments():
 
         if self.telegram:
             telegram_params['telegram']['token'] = check_dict_key(self.telegram, 'token') or TELEGRAM_TOKEN
-            telegram_params['telegram']['chat_id'] = check_dict_key(self.telegram, 'channel_id') or TELEGRAM_CHANNEL_ID
+            telegram_params['telegram']['chat_id'] = check_dict_key(self.telegram, 'chat_id') or TELEGRAM_CHANNEL_ID
         else:
              telegram_params['telegram']['token'], telegram_params['telegram']['chat_id'] = TELEGRAM_TOKEN, TELEGRAM_CHANNEL_ID
 
-        telegram_params['telegram']['level'] = "ERROR"
-        telegram_params['telegram']['formatter'] = "standard"
-        telegram_params['telegram']['class'] = "aiolog.telegram.Handler"
+        if not any(list(telegram_params.values())):
+            return None
+        else:
+            telegram_params['telegram']['level'] = "ERROR"
+            telegram_params['telegram']['formatter'] = "standard"
+            telegram_params['telegram']['class'] = "aiolog.telegram.Handler"
 
-        return telegram_params
+            return telegram_params
  
  
 # Logging
@@ -151,8 +161,8 @@ sys.path.insert(0, rel('../'))
 
 
 class LoggerValidation:
-    def __init__(self, name: str, option_args: Arguments) -> None:
-        self.option_args = option_args
+    def __init__(self, name: str, arguments: Arguments) -> None:
+        self._arguments = arguments
         self.name = name
 
     def add_handlers(self, data, params: dict, hname: str) -> None:
@@ -166,13 +176,13 @@ class LoggerValidation:
             except KeyError:
                 data['handlers'].update(params)
                 data['loggers']['']['handlers'].append(hname)
-            
+
             return data
 
 
     def set_dict_config(self, data: dict) -> None:
-        self.add_handlers(data, self.option_args.get_smtp_params(), 'smtp')
-        self.add_handlers(data, self.option_args.get_telegram_params(), 'telegram')
+        self.add_handlers(data, self._arguments.get_smtp_params(), 'smtp')
+        self.add_handlers(data, self._arguments.get_telegram_params(), 'telegram')
         logging.config.dictConfig(data)
 
 
@@ -206,7 +216,7 @@ class LoggerValidation:
                         ],
                         'level': "DEBUG"
                     }
-                },
+                }
             }
             self.set_dict_config(data)
         else:
