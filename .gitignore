@@ -127,3 +127,17 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Editors
+.vscode
+.vscode/
+
+# Test python files/folders
+examples
+telegram_bot
+test.py
+tests.py
+
+# Config files
+cfg.json
+n_cfg.json
