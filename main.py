@@ -1,5 +1,3 @@
-import aiolog
-import datetime
 import aiohttp
 import asyncio
 from asyncio.exceptions import CancelledError
@@ -29,7 +27,6 @@ if __name__ == "__main__":
     args = Arguments()
     logger = LoggerValidation(__name__, args).get_logger()
 
-    aiolog.start()
     loop = asyncio.get_event_loop()
     try:
         task = loop.create_task(main(args.resourses))
