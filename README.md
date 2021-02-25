@@ -2,14 +2,17 @@
 
 If you read this, then is not script anymore. This is bad optimized application.
 
-Non-blocked simple class-based app which allow send error message to email using smtp handler and telegram handler.
+Async simple app which allow send error message to email using smtp handler and telegram handler.
+
+This app use aiolog library for async sending message to mail and telegram.
 
 # Instalation
 
 install requirements.txt:
 - python-dotenv==0.15.0
-- requests==2.25.1
-- pyTelegramBotAPI==3.7.6
+- aiogram==2.25.1
+- aiohttp==3.7.3
+- aiolog==0.1.0
 
 # Usage
 
@@ -58,15 +61,18 @@ Add all requirements arguments for working with extension (telegram, smtp):
             + EMAIL_TO_ADDRES
         + optional:
             + EMAIL_SUBJECT (default: 'Ошибка в скрипте, ресурс недоступен!')
+            + USE_TLS (default: False)
     * json string:
         + required:
-            + mailhost
+            + hostname
+            + port
             + email_login
             + email_password
             + fromaddr
             + toaddrs
         + optional:
             + subject (default: 'Ошибка в скрипте, ресурс недоступен!')
+            + use_tls (dafault: False)
 + telegram arguments:
     * dotenv:
         + required:
@@ -100,14 +106,14 @@ or use cfg.json file for full configurating script:
         "telegram": {
             "level": "DEBUG",
             "formatter": "standard",
-            "class": "handlers.TelegramHandler",
+            "class": "aiolog.telegram.Handler",
             "token": "your telegram bot token",
             "channel_id": "telegram chat id"
         },
         "smtp": {
             "level": "ERROR",
             "formatter": "standard",
-            "class": "handlers.TlsSMTPHandler",
+            "class": "aiolog.smtp.Handler",
             "mailhost": ["smtp.yandex.com", 465],
             "fromaddr": "bot@email",
             "toaddrs": "your@email",
@@ -126,7 +132,7 @@ or use cfg.json file for full configurating script:
     },
     "root": {
         "level": "DEBUG",
-        "handlers": ["console", "file"]
+        "handlers": ["console", "file", "telegram", "smtp"]
     }
 }
 ```
